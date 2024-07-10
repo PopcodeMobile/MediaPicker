@@ -13,10 +13,12 @@ public struct AlbumSelectionView: View {
 
     @Binding var showingCamera: Bool
     @Binding var currentFullscreenMedia: Media?
+
     let showingLiveCameraCell: Bool
     let selectionParamsHolder: SelectionParamsHolder
     let filterClosure: MediaPicker.FilterClosure?
     let massFilterClosure: MediaPicker.MassFilterClosure?
+    var shouldDismiss: ()->()
 
     @State private var showingLoadingCell = false
 
@@ -31,7 +33,8 @@ public struct AlbumSelectionView: View {
                 currentFullscreenMedia: $currentFullscreenMedia,
                 shouldShowCamera: showingLiveCameraCell,
                 shouldShowLoadingCell: showingLoadingCell,
-                selectionParamsHolder: selectionParamsHolder
+                selectionParamsHolder: selectionParamsHolder,
+                shouldDismiss: shouldDismiss
             )
         case .albums:
             AlbumsView(
@@ -58,7 +61,8 @@ public struct AlbumSelectionView: View {
                     currentFullscreenMedia: $currentFullscreenMedia,
                     shouldShowCamera: false,
                     shouldShowLoadingCell: showingLoadingCell,
-                    selectionParamsHolder: selectionParamsHolder
+                    selectionParamsHolder: selectionParamsHolder,
+                    shouldDismiss: shouldDismiss
                 )
                 .id(album.id)
             }

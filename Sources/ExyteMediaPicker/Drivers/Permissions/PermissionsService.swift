@@ -8,83 +8,49 @@ import AVFoundation
 import Photos
 
 final class PermissionsService: ObservableObject {
-    @Published var cameraAction: CameraAction?
-    @Published var photoLibraryAction: PhotoLibraryAction?
+    @Published var cameraAction: CameraAction? = .authorize
+    @Published var photoLibraryAction: PhotoLibraryAction? = .authorize
 
     private var subscriptions = Set<AnyCancellable>()
 
     init() {
         photoLibraryChangePermissionPublisher
             .sink { [weak self] in
-                self?.reload()
+                self?.checkPhotoLibraryAuthorizationStatus()
             }
             .store(in: &subscriptions)
-        reload()
-    }
 
-    func reload() {
-        checkCameraAuthorizationStatus()
-        checkPhotoLibraryAuthorizationStatus()
+        cameraChangePermissionPublisher
+            .sink { [weak self] in
+                self?.checkCameraAuthorizationStatus()
+            }
+            .store(in: &subscriptions)
     }
 
     /// photoLibraryChangePermissionPublisher gets called multiple times even when nothing changed in photo library, so just use this one to make sure the closure runs exactly once
-    static func requestPermission(_ permissionGrantedClosure: @escaping ()->()) {
+    static func requestPhotoLibraryPermission(_ permissionGrantedClosure: @escaping ()->()) {
         PHPhotoLibrary.requestAuthorization { status in
             if status == .authorized || status == .limited {
                 permissionGrantedClosure()
             }
         }
     }
-}
 
-private extension PermissionsService {
-    func checkCameraAuthorizationStatus() {
-        let status = AVCaptureDevice.authorizationStatus(for: .video)
-        handle(camera: status)
-    }
-
-    func handle(camera status: AVAuthorizationStatus) {
-        var result: CameraAction?
-#if targetEnvironment(simulator)
-        result = .unavailable
-#else
-        switch status {
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] _ in
-                self?.checkCameraAuthorizationStatus()
-            }
-        case .restricted:
-            result = .unavailable
-        case .denied:
-            result = .authorize
-        case .authorized:
-            // Do nothing
-            break
-        @unknown default:
-            result = .unknown
-        }
-#endif
-        DispatchQueue.main.async { [weak self] in
-            self?.cameraAction = result
+    func requestCameraPermission() {
+        AVCaptureDevice.requestAccess(for: .video) { [weak self] _ in
+            self?.checkCameraAuthorizationStatus()
         }
     }
 
     func checkPhotoLibraryAuthorizationStatus() {
         let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-        handle(photoLibrary: status)
-    }
-
-    func handle(photoLibrary status: PHAuthorizationStatus) {
+        
         var result: PhotoLibraryAction?
         switch status {
-        case .notDetermined:
-            PHPhotoLibrary.requestAuthorization { [weak self] status in
-                self?.handle(photoLibrary: status)
-            }
         case .restricted:
             // TODO: Make sure that access can't change when status == .restricted
             result = .unavailable
-        case .denied:
+        case .notDetermined, .denied:
             result = .authorize
         case .authorized:
             // Do nothing
@@ -97,6 +63,30 @@ private extension PermissionsService {
 
         DispatchQueue.main.async { [weak self] in
             self?.photoLibraryAction = result
+        }
+    }
+
+    func checkCameraAuthorizationStatus() {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+
+        var result: CameraAction?
+#if targetEnvironment(simulator)
+        result = .unavailable
+#else
+        switch status {
+        case .restricted:
+            result = .unavailable
+        case .notDetermined, .denied:
+            result = .authorize
+        case .authorized:
+            // Do nothing
+            break
+        @unknown default:
+            result = .unknown
+        }
+#endif
+        DispatchQueue.main.async { [weak self] in
+            self?.cameraAction = result
         }
     }
 }

@@ -8,27 +8,31 @@
 import SwiftUI
 import AVFoundation
 
-struct LiveCameraView: UIViewRepresentable {
+public struct LiveCameraView: UIViewRepresentable {
 
     let session: AVCaptureSession
     var videoGravity: AVLayerVideoGravity = .resizeAspect
     var orientation: UIDeviceOrientation = UIDevice.current.orientation
 
-    func makeUIView(context: Context) -> LiveVideoCaptureView {
-        LiveVideoCaptureView(
+    public func makeUIView(context: Context) -> LiveVideoCaptureView {
+        NotificationCenter.default.post(
+            name: cameraChangePermissionNotification,
+            object: nil)
+
+        return LiveVideoCaptureView(
             session: session,
             videoGravity: videoGravity,
             orientation: orientation
         )
     }
 
-    func updateUIView(_ uiView: LiveVideoCaptureView, context: Context) {
+    public func updateUIView(_ uiView: LiveVideoCaptureView, context: Context) {
         uiView.updateOrientation(orientation)
     }
 
 }
 
-final class LiveVideoCaptureView: UIView {
+public final class LiveVideoCaptureView: UIView {
 
     var session: AVCaptureSession? {
         get {
@@ -39,7 +43,7 @@ final class LiveVideoCaptureView: UIView {
         }
     }
 
-    override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
+    public override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
 
     private var videoLayer: AVCaptureVideoPreviewLayer { layer as! AVCaptureVideoPreviewLayer }
 

@@ -17,7 +17,9 @@ struct CustomizedMediaPicker: View {
 
     @State private var mediaPickerMode = MediaPickerMode.photos
     @State private var selectedAlbum: Album?
+    @State private var currentFullscreenMedia: Media?
     @State private var showAlbumsDropDown: Bool = false
+    @State private var videoIsBeingRecorded: Bool = false
 
     let maxCount: Int = 5
 
@@ -25,12 +27,13 @@ struct CustomizedMediaPicker: View {
         MediaPicker(
             isPresented: $isPresented,
             onChange: { medias = $0 },
-            albumSelectionBuilder: { _, albumSelectionView in
+            albumSelectionBuilder: { _, albumSelectionView, _ in
                 VStack {
                     headerView
                     albumSelectionView
                     Spacer()
                     footerView
+                        .background(Color.black)
                 }
                 .background(Color.black)
             },
@@ -40,28 +43,50 @@ struct CustomizedMediaPicker: View {
                         Spacer()
                         Button("Done", action: { isPresented = false })
                     }
+                    .padding()
                     cameraSelectionView
                     HStack {
                         Button("Cancel", action: cancelClosure)
                         Spacer()
                         Button(action: addMoreClosure) {
                             Text("Take more photos")
-                                .font(.headline)
-                                .foregroundColor(.black)
-                                .padding()
-                        }
-                        .background {
-                            Color("CustomGreen")
-                                .cornerRadius(16)
+                                .greenButtonStyle()
                         }
                     }
+                    .padding()
                 }
                 .background(Color.black)
+            },
+            cameraViewBuilder: { cameraSheetView, cancelClosure, showPreviewClosure, takePhotoClosure, startVideoCaptureClosure, stopVideoCaptureClosure, _, _ in
+                cameraSheetView
+                    .overlay(alignment: .topLeading) {
+                        HStack {
+                            Button("Cancel") { cancelClosure() }
+                                .foregroundColor(Color("CustomPurple"))
+                            Spacer()
+                            Button("Done") { showPreviewClosure() }
+                                .foregroundColor(Color("CustomPurple"))
+                        }
+                        .padding()
+                    }
+                    .overlay(alignment: .bottom) {
+                        HStack {
+                            Button("Take photo") { takePhotoClosure() }
+                                .greenButtonStyle()
+                            Button(videoIsBeingRecorded ? "Stop video capture" : "Capture video") {
+                                videoIsBeingRecorded ? stopVideoCaptureClosure() : startVideoCaptureClosure()
+                                videoIsBeingRecorded.toggle()
+                            }
+                            .greenButtonStyle()
+                        }
+                        .padding()
+                    }
             }
         )
         .showLiveCameraCell()
         .albums($albums)
         .pickerMode($mediaPickerMode)
+        .currentFullscreenMedia($currentFullscreenMedia)
         .orientationHandler {
             switch $0 {
             case .lock: appDelegate.lockOrientationToPortrait()
@@ -116,13 +141,12 @@ struct CustomizedMediaPicker: View {
 
     var footerView: some View {
         HStack {
-            Button {
-                medias = []
-                isPresented = false
-            } label: {
-                Text("Cancel")
-                    .foregroundColor(.white.opacity(0.7))
-            }
+            TextField("", text: .constant(""), prompt: Text("Add a caption").foregroundColor(.gray))
+                .padding()
+                .background {
+                    Color.white.opacity(0.2)
+                        .cornerRadius(6)
+                }
 
             Spacer(minLength: 70)
 
@@ -137,18 +161,12 @@ struct CustomizedMediaPicker: View {
                         .background(Color.white)
                         .clipShape(Circle())
                 }
-                .font(.headline)
-                .foregroundColor(.black)
-                .padding(.horizontal)
-                .padding(.vertical, 15)
                 .frame(maxWidth: .infinity)
             }
-            .background {
-                Color("CustomGreen")
-                    .cornerRadius(16)
-            }
+            .greenButtonStyle()
         }
         .padding(.horizontal)
+        .padding(.vertical, 8)
     }
 
     var albumsDropdown: some View {
@@ -165,5 +183,17 @@ struct CustomizedMediaPicker: View {
             .padding(15)
         }
         .frame(maxHeight: 300)
+    }
+}
+
+extension View {
+    func greenButtonStyle() -> some View {
+        self.font(.headline)
+            .foregroundColor(.black)
+            .padding()
+            .background {
+                Color("CustomGreen")
+                    .cornerRadius(16)
+            }
     }
 }

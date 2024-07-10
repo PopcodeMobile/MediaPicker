@@ -68,14 +68,16 @@ After making one photo, you see a preview of it and a little plus icon, by tappi
 `onChange` - a closure that returns the selected media every time the selection changes
 
 ### Init - optional view builders
-You can pass two view builders in order to add your own buttons and other elements to media picker screens. First screen you can customize is default photos grid view. Pass `albumSelectionBuilder` closure like this to replace the standard one with your own view:
+You can pass 1-3 view builders in order to add your own buttons and other elements to media picker screens. You can pass all, some or none of these when creating your `MediaPicker` (see the custom picker in the example project for usage example). First screen you can customize is default photos grid view. Pass `albumSelectionBuilder` closure like this to replace the standard one with your own view:
 ```swift
 MediaPicker(
     isPresented: $isPresented,
     onChange: { selectedMedia = $0 },
-    albumSelectionBuilder: { defaultHeaderView, albumSelectionView in
+    albumSelectionBuilder: { defaultHeaderView, albumSelectionView, isInFullscreen in
         VStack {
-            defaultHeaderView
+            if !isInFullscreen {
+                defaultHeaderView
+            }
             albumSelectionView
             Spacer()
             footerView
@@ -88,6 +90,7 @@ MediaPicker(
 `albumSelectionBuilder` gives you two views to work with:
 - `defaultHeaderView` - a default looking `header` with photos/albums mode switcher
 - `albumSelectionView` - the photos grid itself
+- `isInFullscreen` - is fullscreen photo details screen displayed. Use for example to hide the header while in fullscreen mode.
 
 The second customizable screen is the one you see after taking a photo. Pass `cameraSelectionBuilder` like this:
 ```swift
@@ -117,13 +120,56 @@ MediaPicker(
 - `cancelClosure` - show confirmation and return to photos grid screen if confirmed
 - `cameraSelectionView` - swipable camera photos preview collection itself
 
-You can pass one, both or none of these when creating your `MediaPicker`. (see the custom picker in the example project for usage example)
+The last one is live camera screen
+
+```swift
+MediaPicker(
+    isPresented: $isPresented,
+    onChange: { selectedMedia = $0 },
+    cameraViewBuilder: { cameraSheetView, cancelClosure, showPreviewClosure, takePhotoClosure, startVideoCaptureClosure, stopVideoCaptureClosure, toggleFlash, flipCamera in
+        cameraSheetView
+            .overlay(alignment: .topLeading) {
+                HStack {
+                    Button("Cancel") { cancelClosure() }
+                        .foregroundColor(Color("CustomPurple"))
+                    Spacer()
+                    Button("Done") { showPreviewClosure() }
+                        .foregroundColor(Color("CustomPurple"))
+                }
+                .padding()
+            }
+            .overlay(alignment: .bottom) {
+                HStack {
+                    Button("Take photo") { takePhotoClosure() }
+                        .greenButtonStyle()
+                    Button(videoIsBeingRecorded ? "Stop video capture" : "Capture video") {
+                        videoIsBeingRecorded ? stopVideoCaptureClosure() : startVideoCaptureClosure()
+                        videoIsBeingRecorded.toggle()
+                    }
+                    .greenButtonStyle()
+                }
+                .padding()
+            }
+    }
+)
+```
+
+`cameraViewBuilder` live camera capture view and a lot of closures to do with as you please:
+- `cameraSheetView` - live camera capture view
+- `cancelClosure` - if you want to display "are you sure" before closing
+- `showPreviewClosure` - shows preview of taken photos
+- `cancelClosure` - if you want to display "are you sure" before closing
+- `startVideoCaptureClosure` - starts video capture, you'll need a bollean varialbe to track recording state
+- `stopVideoCaptureClosure` - stops video capture
+- `toggleFlash` - flash off/on
+- `flipCamera` - camera back/front
 
 ## Available modifiers
 `showLiveCameraCell` - show live camera feed cell in the top left corner of the gallery grid     
 `mediaSelectionType` - limit displayed media type: .photo, .video or both   
 `mediaSelectionStyle` - a way to display selected/unselected media state: a counter or a simple checkmark   
 `mediaSelectionLimit` - the maximum selection quantity allowed, 'nil' for unlimited selection   
+`showFullscreenPreview` - if true - tap on media opens fullscreen preview, if false - tap on image immediately selects this image and closes the picker
 
 ### Available modifiers - filtering
 `applyFilter((Media) async -> Media?)` - pass a closure to apply to each of medias individually. Closures's return type is `Media?`: return `Media` the closure gives to you if you want it to be displayed on photo grid, or `nil` if you want to exclude it. The code you apply to each media can be asyncronous (using async/await syntactics, check out `FilterMediaPicker` in example project)
@@ -196,18 +242,21 @@ github "Exyte/MediaPicker"
 
 ## Requirements
 
-* iOS 15+
+* iOS 16+
 * Xcode 13+ 
 
 ## Our other open source SwiftUI libraries
 [PopupView](https://github.com/exyte/PopupView) - Toasts and popups library    
 [Grid](https://github.com/exyte/Grid) - The most powerful Grid container    
-[ScalingHeaderScrollView](https://github.com/exyte/ScalingHeaderScrollView) - A scroll view with a sticky header which shrinks as you scroll  
-[AnimatedTabBar](https://github.com/exyte/AnimatedTabBar) - A tabbar with number of preset animations      
-[Chat](https://github.com/exyte/chat) - Chat UI framework with fully customizable message cells, input view, and a built-in media picker        
+[ScalingHeaderScrollView](https://github.com/exyte/ScalingHeaderScrollView) - A scroll view with a sticky header which shrinks as you scroll    
+[AnimatedTabBar](https://github.com/exyte/AnimatedTabBar) - A tabbar with a number of preset animations   
+[Chat](https://github.com/exyte/chat) - Chat UI framework with fully customizable message cells, input view, and a built-in media picker  
+[OpenAI](https://github.com/exyte/OpenAI) Wrapper lib for [OpenAI REST API](https://platform.openai.com/docs/api-reference/introduction)    
+[AnimatedGradient](https://github.com/exyte/AnimatedGradient) - Animated linear gradient     
 [ConcentricOnboarding](https://github.com/exyte/ConcentricOnboarding) - Animated onboarding flow    
 [FloatingButton](https://github.com/exyte/FloatingButton) - Floating button menu    
 [ActivityIndicatorView](https://github.com/exyte/ActivityIndicatorView) - A number of animated loading indicators    
 [ProgressIndicatorView](https://github.com/exyte/ProgressIndicatorView) - A number of animated progress indicators    
+[FlagAndCountryCode](https://github.com/exyte/FlagAndCountryCode) - Phone codes and flags for every country    
 [SVGView](https://github.com/exyte/SVGView) - SVG parser    
 [LiquidSwipe](https://github.com/exyte/LiquidSwipe) - Liquid navigation animation    

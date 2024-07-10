@@ -8,14 +8,20 @@ import SwiftUI
 public struct MediaPickerTheme {
     public let main: Main
     public let selection: Selection
+    public let cellStyle: CellStyle
     public let error: Error
+    public let defaultHeader: DefaultHeader
 
     public init(main: MediaPickerTheme.Main = .init(),
                 selection: MediaPickerTheme.Selection = .init(),
-                error: MediaPickerTheme.Error = .init()) {
+                cellStyle: MediaPickerTheme.CellStyle = .init(),
+                error: MediaPickerTheme.Error = .init(),
+                defaultHeader: MediaPickerTheme.DefaultHeader = .init()) {
         self.main = main
         self.selection = selection
+        self.cellStyle = cellStyle
         self.error = error
+        self.defaultHeader = defaultHeader
     }
 }
 
@@ -37,6 +43,20 @@ extension MediaPickerTheme {
             self.fullscreenPhotoBackground = fullscreenPhotoBackground
             self.cameraBackground = cameraBackground
             self.cameraSelectionBackground = cameraSelectionBackground
+        }
+    }
+    
+    public struct CellStyle {
+        public let columnsSpacing: CGFloat
+        public let rowSpacing: CGFloat
+        public let cornerRadius: CGFloat
+
+        public init(columnsSpacing: CGFloat = 1,
+                    rowSpacing: CGFloat = 1,
+                    cornerRadius: CGFloat = 0) {
+            self.columnsSpacing = columnsSpacing
+            self.rowSpacing = rowSpacing
+            self.cornerRadius = cornerRadius
         }
     }
 
@@ -68,6 +88,23 @@ extension MediaPickerTheme {
                     tint: Color = .white) {
             self.background = background
             self.tint = tint
+        }
+    }
+
+    public struct DefaultHeader {
+        public let background: Color
+
+        public init(background: Color = Color(uiColor: .systemGroupedBackground),
+                    segmentTintColor: Color = .white,
+                    selectedSegmentTintColor: Color = .white,
+                    selectedText: Color = .black,
+                    unselectedText: Color = .black) {
+            self.background = background
+
+            UISegmentedControl.appearance().backgroundColor = UIColor(segmentTintColor)
+            UISegmentedControl.appearance().selectedSegmentTintColor = UIColor(selectedSegmentTintColor)
+            UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor(selectedText)], for: .selected)
+            UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor(unselectedText)], for: .normal)
         }
     }
 }
